@@ -17,5 +17,6 @@ root.render(
       <Scene />
       {/* <OrbitControls /> */}
     </Canvas>
+  <Leva collapsed={false} />
   </React.StrictMode>
 )

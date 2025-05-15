@@ -2,7 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { DoubleSide } from 'three'
-import { useControls } from 'leva'
+import { useControls, useCreateStore } from 'leva'
 import { Line } from '@react-three/drei'
 
 const vertexShader = `
@@ -15,7 +15,7 @@ const vertexShader = `
 `
 
 const fragmentShader = `
-  #define NMAX 1000
+  #define NMAX 100
   uniform float uTime;
   uniform float uDisplaceX;
   uniform float uDisplaceY;
@@ -37,7 +37,7 @@ const fragmentShader = `
     float sum = 0.0;
     for (int i = 0; i < NMAX; i++) {
       int pos = int(mod(float(i), 3.0));
-      float p = (pos == 0 || pos == 3) ? 1.0 : 0.0;
+      float p = (pos == 0) ? 1.0 : 0.0;
       float r = mix(coord.x, coord.y, p);
       x = r * x * (1.0 - x);
       sum += log(abs(r - 2.0 * r * x));
@@ -61,10 +61,27 @@ const fragmentShader = `
   }
 `
 
+function VisibleCoordsPanel({ uZoom, uDisplaceX, uDisplaceY }) {
+  const coordStore = useRef(useCreateStore()).current
+  const half = 0.5 / uZoom
+
+  useControls(
+    'Coordenadas visibles',
+    {
+      xMin: { value: (uDisplaceX - half).toFixed(2), editable: false },
+      xMax: { value: (uDisplaceX + half).toFixed(2), editable: false },
+      yMin: { value: (uDisplaceY - half).toFixed(2), editable: false },
+      yMax: { value: (uDisplaceY + half).toFixed(2), editable: false },
+    },
+    { store: coordStore }
+  )
+
+  return null
+}
+
 export default function Lyapunov2D() {
   const shaderRef = useRef()
 
-  // Leva sliders
   const {
     uZoom,
     uDisplaceX,
@@ -79,45 +96,12 @@ export default function Lyapunov2D() {
     uBlack:      { value: 0.05, min: 0.0, max: 0.2, step: 0.001 },
   })
 
-  // Interpolated values
   const current = useRef({
     uZoom,
     uDisplaceX,
     uDisplaceY,
     uWhite,
     uBlack,
-  })
-
-  // Dynamic coordinate display using getter pattern
-  useControls('Coordenadas visibles', {
-    xMin: {
-      get value() {
-        const half = 0.5 / current.current.uZoom
-        return (current.current.uDisplaceX - half).toFixed(2)
-      },
-      editable: false,
-    },
-    xMax: {
-      get value() {
-        const half = 0.5 / current.current.uZoom
-        return (current.current.uDisplaceX + half).toFixed(2)
-      },
-      editable: false,
-    },
-    yMin: {
-      get value() {
-        const half = 0.5 / current.current.uZoom
-        return (current.current.uDisplaceY - half).toFixed(2)
-      },
-      editable: false,
-    },
-    yMax: {
-      get value() {
-        const half = 0.5 / current.current.uZoom
-        return (current.current.uDisplaceY + half).toFixed(2)
-      },
-      editable: false,
-    },
   })
 
   const uniforms = useMemo(() => ({
@@ -160,6 +144,11 @@ export default function Lyapunov2D() {
 
   return (
     <>
+      <VisibleCoordsPanel
+        uZoom={current.current.uZoom}
+        uDisplaceX={current.current.uDisplaceX}
+        uDisplaceY={current.current.uDisplaceY}
+      />
       <mesh>
         <planeGeometry args={[5, 5, 64, 64]} />
         <shaderMaterial
@@ -171,7 +160,7 @@ export default function Lyapunov2D() {
           transparent
         />
       </mesh>
-      <Line points={framePoints} color="white" lineWidth={1} />
+      <Line points={framePoints} color="black" lineWidth={2} />
     </>
   )
 }
