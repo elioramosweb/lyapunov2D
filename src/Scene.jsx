@@ -1,11 +1,9 @@
 // Scene.jsx
 import React from 'react'
-import PlaneWithShader from './PlaneWithShader'
+import Lyapunov2D from './Lyapunov2D'
 
 export default function Scene() {
   return (
-    <mesh position={[0, 0, 0]}>
-      <PlaneWithShader/>
-    </mesh>
+      <Lyapunov2D/>
   )
 }

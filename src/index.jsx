@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client'
 import { Canvas } from '@react-three/fiber'
 import Scene from './Scene'
 import { OrbitControls } from '@react-three/drei'
+import { Leva } from 'leva'  
 
 
 const root = ReactDOM.createRoot(document.querySelector('#root'))
@@ -14,7 +15,7 @@ root.render(
       <ambientLight />
       {/* <axesHelper args={[5]} /> */}
       <Scene />
-      <OrbitControls />
+      {/* <OrbitControls /> */}
     </Canvas>
   </React.StrictMode>
 )
