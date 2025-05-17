@@ -5,6 +5,7 @@ import { DoubleSide } from 'three'
 import { useControls, useCreateStore } from 'leva'
 import { Line } from '@react-three/drei'
 
+
 const vertexShader = `
   uniform float uTime;
   varying vec2 vUv;
@@ -15,7 +16,9 @@ const vertexShader = `
 `
 
 const fragmentShader = `
-  #define NMAX 100
+  #define NMAX 500
+  #define PI   3.14159265359
+  uniform float uArray[5];
   uniform float uTime;
   uniform float uDisplaceX;
   uniform float uDisplaceY;
@@ -32,17 +35,27 @@ const fragmentShader = `
     return vec3(r * intensity, g * intensity, b * intensity);
   }
 
+  
+
+  float tentMap(float x, float r) {
+      return r * (1.0 - abs(2.0 * x - 1.0));
+  }
+
+
+
   float lyapunov(vec2 coord) {
-    float x = 0.5;
-    float sum = 0.0;
-    for (int i = 0; i < NMAX; i++) {
-      int pos = int(mod(float(i), 3.0));
-      float p = (pos == 0) ? 1.0 : 0.0;
-      float r = mix(coord.x, coord.y, p);
-      x = r * x * (1.0 - x);
-      sum += log(abs(r - 2.0 * r * x));
-    }
-    return sum / float(NMAX);
+      float x = 0.5;
+      float sum = 0.0;
+      for (int i = 0; i < NMAX; i++) {
+          int idx = int(mod(float(i), 5.0));  // idx va de 0 a 4 en bucle
+          float r = mix(coord.x, coord.y, uArray[idx]);
+          x = r * x*(1.0 - x);
+          //x = r*cos((PI)*x);
+          //x = r - x*x;
+         // x = clamp(x,0.0,1.0);
+          sum += log(abs(r - 2.0 * r * x));
+      }
+      return sum / float(NMAX);
   }
 
   void main() {
@@ -50,7 +63,7 @@ const fragmentShader = `
     uv.x += uDisplaceX;
     uv.y += uDisplaceY;
 
-    float lyap = smoothstep(-1.0, 0.8, lyapunov(uv));
+    float lyap = smoothstep(-1.0, uTime, lyapunov(uv));
     vec3 col = hotPalette(lyap);
 
     if (distance(col, vec3(1.0)) < uWhite || distance(col, vec3(0.0)) < uBlack) {
@@ -61,24 +74,6 @@ const fragmentShader = `
   }
 `
 
-function VisibleCoordsPanel({ uZoom, uDisplaceX, uDisplaceY }) {
-  const coordStore = useRef(useCreateStore()).current
-  const half = 0.5 / uZoom
-
-  useControls(
-    'Coordenadas visibles',
-    {
-      xMin: { value: (uDisplaceX - half).toFixed(2), editable: false },
-      xMax: { value: (uDisplaceX + half).toFixed(2), editable: false },
-      yMin: { value: (uDisplaceY - half).toFixed(2), editable: false },
-      yMax: { value: (uDisplaceY + half).toFixed(2), editable: false },
-    },
-    { store: coordStore }
-  )
-
-  return null
-}
-
 export default function Lyapunov2D() {
   const shaderRef = useRef()
 
@@ -88,12 +83,15 @@ export default function Lyapunov2D() {
     uDisplaceY,
     uWhite,
     uBlack,
+    pattern,
   } = useControls('Uniforms', {
-    uZoom:       { value: 3.33, min: 0.1, max: 10, step: 0.01 },
-    uDisplaceX:  { value: 0.0,  min: -10, max: 10, step: 0.01 },
-    uDisplaceY:  { value: 0.0,  min: -10, max: 10, step: 0.01 },
-    uWhite:      { value: 0.05, min: 0.0, max: 0.2, step: 0.001 },
-    uBlack:      { value: 0.05, min: 0.0, max: 0.2, step: 0.001 },
+    uZoom:       { value: 2.04, min: 0.1, max: 10, step: 0.001 },
+    uDisplaceX:  { value: 2.37,  min: -10, max: 10, step: 0.001 },
+    uDisplaceY:  { value: 3.29,  min: -10, max: 10, step: 0.001 },
+    uWhite:      { value: 0.0, min: 0.0, max: 0.2, step: 0.001 },
+    uBlack:      { value: 0.0, min: 0.0, max: 0.2, step: 0.001 },
+    pattern:     { value: 'ABBAB' },
+
   })
 
   const current = useRef({
@@ -111,6 +109,7 @@ export default function Lyapunov2D() {
     uDisplaceY:  { value: uDisplaceY },
     uWhite:      { value: uWhite },
     uBlack:      { value: uBlack },
+    uArray:      { value: [0, 0, 0, 0, 0] },
   }), [])
 
   useFrame(({ clock }) => {
@@ -131,6 +130,17 @@ export default function Lyapunov2D() {
       u.uDisplaceY.value  = current.current.uDisplaceY
       u.uWhite.value      = current.current.uWhite
       u.uBlack.value      = current.current.uBlack
+
+      const newArray = pattern.split('').map(c => (c === 'B' ? 1.0 : 0.0))
+
+      while (newArray.length < 5) newArray.push(0.0)
+      newArray.length = 5
+
+      for (let i = 0; i < 5; i++) {
+        u.uArray.value[i] = newArray[i]
+      }
+
+
     }
   })
 
@@ -144,11 +154,6 @@ export default function Lyapunov2D() {
 
   return (
     <>
-      <VisibleCoordsPanel
-        uZoom={current.current.uZoom}
-        uDisplaceX={current.current.uDisplaceX}
-        uDisplaceY={current.current.uDisplaceY}
-      />
       <mesh>
         <planeGeometry args={[5, 5, 64, 64]} />
         <shaderMaterial
