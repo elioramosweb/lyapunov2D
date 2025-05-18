@@ -122,6 +122,7 @@ const fragmentShader = `
     return res*res;
   }
 
+
   float lyapunov(vec2 coord) {
     float x = 0.5;
     float sum = 0.0;
@@ -147,7 +148,7 @@ const fragmentShader = `
     centeredUv = rot * centeredUv;
     uv = centeredUv + 0.5;
 
-    float n = uNoiseEnabled ? 2.0 * noise(uv * 2.0 + 0.5 * uTime) : 0.0;
+    float n = uNoiseEnabled ? 2.0 * noise(uv * 5.0 + 0.5 * uTime) : 0.0;
     float lyap = smoothstep(uLypMin, uLypMax, n + lyapunov(uv));
     vec3 col = getPaletteColor(lyap);
 
@@ -192,7 +193,7 @@ export default function Lyapunov2D() {
     animateTime,
     uNoiseEnabled
   } = useControls('Uniforms', {
-    uIterMax:    { value: 100, min: 50, max: 20000, step: 10 },
+    uIterMax:    { value: 100, min: 50, max: 5000, step: 10 },
     uZoom:       { value: 2.04, min: 0.1, max: 10, step: 0.001 },
     uDisplaceX:  { value: 2.37, min: -10, max: 10, step: 0.001 },
     uDisplaceY:  { value: 3.29, min: -10, max: 10, step: 0.001 },
@@ -299,7 +300,7 @@ export default function Lyapunov2D() {
   const xMax = (1 - 0.5) * smoothValues.current.uZoom + 0.5 + smoothValues.current.uDisplaceX;
   const yMin = (0 - 0.5) * smoothValues.current.uZoom + 0.5 + smoothValues.current.uDisplaceY;
   const yMax = (1 - 0.5) * smoothValues.current.uZoom + 0.5 + smoothValues.current.uDisplaceY;
-  const infoText = `Pattern: ${pattern} | X: [${xMin.toFixed(2)}, ${xMax.toFixed(2)}] | Y: [${yMin.toFixed(2)}, ${yMax.toFixed(2)}]`
+  const infoText = `Patrón: ${pattern} | X: [${xMin.toFixed(2)}, ${xMax.toFixed(2)}] | Y: [${yMin.toFixed(2)}, ${yMax.toFixed(2)}]`
 
 
   return (
