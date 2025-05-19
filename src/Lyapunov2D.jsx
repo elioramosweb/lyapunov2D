@@ -216,7 +216,7 @@ export default function Lyapunov2D() {
       value: 2
     },
     animateTime: { value: true },
-    uNoiseEnabled: { value: true }
+    uNoiseEnabled: { value: false }
   })
 
   const uniforms = useMemo(() => ({
@@ -306,7 +306,7 @@ export default function Lyapunov2D() {
   return (
     <>
       <mesh>
-        <planeGeometry args={[5, 5, 64, 64]} />
+        <planeGeometry args={[5, 5, 64,64]} />
         <shaderMaterial
           ref={shaderRef}
           vertexShader={vertexShader}
